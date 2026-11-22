@@ -21,7 +21,7 @@ import urllib.request
 API = "https://api.bland.ai/v1"
 OWNER_NUMBER = os.environ.get("OWNER_PHONE", "")  # set OWNER_PHONE to use --to me
 DEFAULT_VOICE = "mason"  # male voice; verify with --list-voices and change if needed
-GREETING = "Hello, I am the AI assistant of Mr. Sohad Sattouf, and I am calling you to {task}."
+GREETING = "Hello{name}, I am the AI assistant of Mr. Sohad Sattouf, and I am calling you to {task}."
 
 
 def request(method, path, body=None):
@@ -52,12 +52,12 @@ def normalize(number):
     return "+" + digits
 
 
-def build_payload(to, task, voice):
+def build_payload(to, task, voice, name=None):
     task = task.strip().rstrip(".")
     return {
         "phone_number": to,
         "voice": voice,
-        "first_sentence": GREETING.format(task=task),
+        "first_sentence": GREETING.format(task=task, name=f" {name}" if name else ""),
         "task": (
             "You are the AI assistant of Mr. Sohad Sattouf, making a phone call on his behalf. "
             f"You opened the call by saying: \"I am calling you to {task}.\" That is the purpose of the call. "
@@ -76,6 +76,7 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("--to", help="phone number, or 'me' for the owner's number")
     p.add_argument("--task", help="what the call is for; completes 'I am calling you to ...'")
+    p.add_argument("--name", help="who you are calling, e.g. 'Mr. Weaam'")
     p.add_argument("--voice", default=DEFAULT_VOICE)
     p.add_argument("--confirm", action="store_true", help="actually place the call")
     p.add_argument("--list-voices", action="store_true")
@@ -91,7 +92,7 @@ def main():
     if not (a.to and a.task):
         p.error("--to and --task are required")
 
-    payload = build_payload(normalize(a.to), a.task, a.voice)
+    payload = build_payload(normalize(a.to), a.task, a.voice, a.name)
     print(json.dumps(payload, indent=2))
     if not a.confirm:
         print("\nPreview only. Add --confirm to place the call.")
