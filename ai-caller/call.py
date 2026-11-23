@@ -52,7 +52,7 @@ def normalize(number):
     return "+" + digits
 
 
-def build_payload(to, task, voice, name=None):
+def build_payload(to, task, voice, name=None, extra=None):
     task = task.strip().rstrip(".")
     return {
         "phone_number": to,
@@ -65,6 +65,7 @@ def build_payload(to, task, voice, name=None):
             "on topic. If asked, confirm you are an AI. If the person asks not to be called "
             "again, apologize, confirm, and end the call. When the purpose is done, thank them "
             "and say goodbye."
+            + (f" Additional instructions: {extra.strip()}" if extra else "")
         ),
         "wait_for_greeting": True,
         "record": True,
@@ -77,6 +78,7 @@ def main():
     p.add_argument("--to", help="phone number, or 'me' for the owner's number")
     p.add_argument("--task", help="what the call is for; completes 'I am calling you to ...'")
     p.add_argument("--name", help="who you are calling, e.g. 'Mr. Weaam'")
+    p.add_argument("--extra", help="extra instructions for the voice agent")
     p.add_argument("--voice", default=DEFAULT_VOICE)
     p.add_argument("--confirm", action="store_true", help="actually place the call")
     p.add_argument("--list-voices", action="store_true")
@@ -92,7 +94,7 @@ def main():
     if not (a.to and a.task):
         p.error("--to and --task are required")
 
-    payload = build_payload(normalize(a.to), a.task, a.voice, a.name)
+    payload = build_payload(normalize(a.to), a.task, a.voice, a.name, a.extra)
     print(json.dumps(payload, indent=2))
     if not a.confirm:
         print("\nPreview only. Add --confirm to place the call.")
